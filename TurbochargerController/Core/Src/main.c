@@ -60,6 +60,87 @@ static void MX_ADC1_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+/*
+ * Initializes ADC to PA2
+ */
+void ADC_init(void) {
+  //Use PC0 as ADC12_IN7
+  //Configure to Analog Mode (MODER bits 0 and 1 to 1)
+  GPIOA->MODER |= 0x3 << 4;
+
+  //Set no pull-up/pull-down resistors (PUPDR bits 0 and 1 to 0)
+  GPIOA->PUPDR &= ~0x3 << 4;
+
+  //Enable ADC1 in RCC Peripheral
+  RCC->APB2ENR |= RCC_APB2ENR_ADCEN;
+
+  //Configure ADC1 to 12-bit resolution, continuous conversion, hardware triggers disabled
+  ADC1->CFGR1 |= (1<<13);
+  ADC1->CFGR1 &= ~((1<<3)|(1<<4)|(1<<10)|(1<<11));
+
+  //Enable Channel 7 in the ADC
+  ADC1->CHSELR |= 1 << 7;
+
+  //Calibrate the ADC
+  //*****Clear ADEN
+  if ((ADC1->CR & ADC_CR_ADEN) != 0) {
+    ADC1->CR |= ADC_CR_ADDIS;
+  }
+  while ((ADC1->CR & ADC_CR_ADEN) != 0){} 
+
+  //*****Clear DMAEN
+  ADC1->CFGR1 &= ~ADC_CFGR1_DMAEN;
+
+  //*****Start Calibratiom
+  ADC1->CR |= ADC_CR_ADCAL;
+
+  //*****Wait until calibration is complete
+  while ((ADC1->CR & ADC_CR_ADCAL) != 0) {}
+  
+  //Enable/start the ADC
+  //*****Clear ADRDY
+  if ((ADC1->ISR & ADC_ISR_ADRDY) != 0) {
+    ADC1->ISR |= ADC_ISR_ADRDY;
+  }
+
+  //*****Enable the ADC
+  ADC1->CR |= ADC_CR_ADEN;
+
+  //*****Wait until the ADC is ready
+  while ((ADC1->ISR & ADC_ISR_ADRDY) == 0) {}
+
+  //*****Start the ADC
+  ADC1->CR |= ADC_CR_ADSTART;
+}
+
+/*                                                                                                                                                                                                         
+ * Converts integer to asci byte array                                                                                                                                                                     
+ */
+char* convert(uint_16 num) {
+  static char bytes[] = {'0','0','0','0','\0'};
+
+  int i = 0;
+  while(num != 0) {
+    int dig = num % 10;
+    bytes[3 - i] = dig + 48;
+    i++;
+    num /= 10;
+  }
+  return bytes;
+}
+
+/*
+ * Reads value of ADC and transmits through UART
+ */
+void check_ADC(void) {
+    //Read ADC Data
+    uint16_t data = ADC1->DR & 0xFFF;
+    char* value = convert(data);
+    
+    //Transmit the value
+    transmitString(value);
+}
+
 // Character transmitting function
 void transmitChar(char input)
 {
