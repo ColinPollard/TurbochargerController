@@ -132,10 +132,10 @@ int main(void)
     /* USER CODE END WHILE */
 		// Step the motor.
 		// GPIOB->ODR ^= (1 << 7);
-		//transmitString("Hello");
-		HAL_UART_Transmit_IT(&huart2, (uint8_t *)toSendBuffer, sizeof(toSendBuffer));
+		transmitString("Hello");
+		// HAL_UART_Transmit_IT(&huart2, (uint8_t *)toSendBuffer, sizeof(toSendBuffer));
 		GPIOB->ODR ^= (1 << 3);
-		HAL_Delay(250);
+		HAL_Delay(10);
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */

@@ -21,17 +21,20 @@ Target DLL:      STLink\ST-LINKIII-KEIL_SWO.dll V3.0.8.0
 Dialog DLL:      TCM.DLL V1.48.0.0
  
 <h2>Project:</h2>
-C:\Users\cdog2\OneDrive\School\ECE5780\Turbocharger Controller\TurbochargerController\MDK-ARM\TurbochargerController.uvprojx
+C:\Users\cdog2\OneDrive\School\ECE5780\TurbochargerController\TurbochargerController\MDK-ARM\TurbochargerController.uvprojx
 Project File Date:  05/01/2021
 
 <h2>Output:</h2>
 *** Using Compiler 'V5.06 update 7 (build 960)', folder: 'D:\New Programs\Keil\ARM\ARMCC\Bin'
 Build target 'TurbochargerController'
 compiling main.c...
+../Core/Src/main.c(124): warning:  #177-D: variable "toSendBuffer"  was declared but never referenced
+  	uint8_t toSendBuffer[] = "Hello World. \r\n";
+../Core/Src/main.c: 1 warning, 0 errors
 linking...
-Program Size: Code=6748 RO-data=500 RW-data=20 ZI-data=1252  
+Program Size: Code=6540 RO-data=500 RW-data=20 ZI-data=1252  
 FromELF: creating hex file...
-"TurbochargerController\TurbochargerController.axf" - 0 Error(s), 0 Warning(s).
+"TurbochargerController\TurbochargerController.axf" - 0 Error(s), 1 Warning(s).
 
 <h2>Software Packages used:</h2>
 
@@ -55,7 +58,7 @@ Package Vendor: Keil
 
    * Component: ARM::CMSIS:CORE:5.4.0
       Include file:  CMSIS\Core\Include\tz_context.h
-Build Time Elapsed:  00:00:09
+Build Time Elapsed:  00:00:05
 </pre>
 </body>
 </html>
