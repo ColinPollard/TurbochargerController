@@ -1,0 +1,35 @@
+turbochargercontroller\stm32l4xx_hal_uart_ex.o: ../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_uart_ex.c
+turbochargercontroller\stm32l4xx_hal_uart_ex.o: ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal.h
+turbochargercontroller\stm32l4xx_hal_uart_ex.o: ../Core/Inc/stm32l4xx_hal_conf.h
+turbochargercontroller\stm32l4xx_hal_uart_ex.o: ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_rcc.h
+turbochargercontroller\stm32l4xx_hal_uart_ex.o: ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_def.h
+turbochargercontroller\stm32l4xx_hal_uart_ex.o: ../Drivers/CMSIS/Device/ST/STM32L4xx/Include/stm32l4xx.h
+turbochargercontroller\stm32l4xx_hal_uart_ex.o: ../Drivers/CMSIS/Device/ST/STM32L4xx/Include/stm32l412xx.h
+turbochargercontroller\stm32l4xx_hal_uart_ex.o: ../Drivers/CMSIS/Include/core_cm4.h
+turbochargercontroller\stm32l4xx_hal_uart_ex.o: D:\New Programs\Keil\ARM\ARMCC\Bin\..\include\stdint.h
+turbochargercontroller\stm32l4xx_hal_uart_ex.o: ../Drivers/CMSIS/Include/cmsis_version.h
+turbochargercontroller\stm32l4xx_hal_uart_ex.o: ../Drivers/CMSIS/Include/cmsis_compiler.h
+turbochargercontroller\stm32l4xx_hal_uart_ex.o: ../Drivers/CMSIS/Include/cmsis_armcc.h
+turbochargercontroller\stm32l4xx_hal_uart_ex.o: ../Drivers/CMSIS/Include/mpu_armv7.h
+turbochargercontroller\stm32l4xx_hal_uart_ex.o: ../Drivers/CMSIS/Device/ST/STM32L4xx/Include/system_stm32l4xx.h
+turbochargercontroller\stm32l4xx_hal_uart_ex.o: ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal.h
+turbochargercontroller\stm32l4xx_hal_uart_ex.o: ../Drivers/STM32L4xx_HAL_Driver/Inc/Legacy/stm32_hal_legacy.h
+turbochargercontroller\stm32l4xx_hal_uart_ex.o: D:\New Programs\Keil\ARM\ARMCC\Bin\..\include\stddef.h
+turbochargercontroller\stm32l4xx_hal_uart_ex.o: ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_rcc_ex.h
+turbochargercontroller\stm32l4xx_hal_uart_ex.o: ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_gpio.h
+turbochargercontroller\stm32l4xx_hal_uart_ex.o: ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_gpio_ex.h
+turbochargercontroller\stm32l4xx_hal_uart_ex.o: ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_dma.h
+turbochargercontroller\stm32l4xx_hal_uart_ex.o: ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_cortex.h
+turbochargercontroller\stm32l4xx_hal_uart_ex.o: ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_adc.h
+turbochargercontroller\stm32l4xx_hal_uart_ex.o: ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_ll_adc.h
+turbochargercontroller\stm32l4xx_hal_uart_ex.o: ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_adc_ex.h
+turbochargercontroller\stm32l4xx_hal_uart_ex.o: ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_exti.h
+turbochargercontroller\stm32l4xx_hal_uart_ex.o: ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_flash.h
+turbochargercontroller\stm32l4xx_hal_uart_ex.o: ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_flash_ex.h
+turbochargercontroller\stm32l4xx_hal_uart_ex.o: ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_flash_ramfunc.h
+turbochargercontroller\stm32l4xx_hal_uart_ex.o: ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_i2c.h
+turbochargercontroller\stm32l4xx_hal_uart_ex.o: ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_i2c_ex.h
+turbochargercontroller\stm32l4xx_hal_uart_ex.o: ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_pwr.h
+turbochargercontroller\stm32l4xx_hal_uart_ex.o: ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_pwr_ex.h
+turbochargercontroller\stm32l4xx_hal_uart_ex.o: ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart.h
+turbochargercontroller\stm32l4xx_hal_uart_ex.o: ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart_ex.h
