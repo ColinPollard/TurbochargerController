@@ -9,6 +9,14 @@ The solution is to use an absolute pressure reading. While this can be acomplish
 
 For this implementation, there are two major devices. The first is a raspberrypi based display that handles all inputs from the user. This device will send desired valve positions and receive pressure and status back over RS232. The second device is an STM32 based unit that collects and processes sensor data, while driving the valves to the desired positions as commanded by the raspberrypi. An absolute pressure sensor is used to measure the downstream pressure from the turbocharger. A stepper motor is used to drive the slow-moving wastegate valve, while a PWM signal is used to pulse the fast-moving bypass solenoid valve. All connections are routed through a DE9 connector using a custom wiring harness.
 
+## Demonstration:
+
+## Software Design:
+* RS232 Communication is handled through timers and interrupts. On receiving a command to move valve positions, an interrupt is triggered that sets desired position variables that are handled elsewhere. The systick interrupt is modified to send a status packet back to the pi every 2 seconds. 
+* Stepper motor movement is handled on a timer, where position is tracked using an open loop controller. Every 10 miliseconds, the motor will move if there is an error between the current position and the desired position. The timer interval can be changed to increase or decrease the rate at which the motor moves. 
+* The solenoid bypass valve is driven directly using the general timer 2 peripheral. A 30Hz carrier frequency is driven using a prescaled system clock. The duty cycle of this signal is updated on receiving a command from the pi.
+* The pressure sensor is read from the ADC in a continuous conversion mode. The value is read during the RS232 transmission timer update.
+
 ## Hardware Design:
 ![Block Diagram](/images/blockdiagram.PNG)
 
