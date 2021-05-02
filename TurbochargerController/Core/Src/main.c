@@ -19,67 +19,97 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-
-/* Private includes ----------------------------------------------------------*/
-/* USER CODE BEGIN Includes */
-
-/* USER CODE END Includes */
-
-/* Private typedef -----------------------------------------------------------*/
-/* USER CODE BEGIN PTD */
-
-/* USER CODE END PTD */
-
-/* Private define ------------------------------------------------------------*/
-/* USER CODE BEGIN PD */
-/* USER CODE END PD */
-
-/* Private macro -------------------------------------------------------------*/
-/* USER CODE BEGIN PM */
-
-/* USER CODE END PM */
-
-/* Private variables ---------------------------------------------------------*/
 ADC_HandleTypeDef hadc1;
 
 UART_HandleTypeDef huart2;
 
-/* USER CODE BEGIN PV */
-
-/* USER CODE END PV */
-
-/* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_ADC1_Init(void);
-/* USER CODE BEGIN PFP */
+void transmitString(char* input);
 
-/* USER CODE END PFP */
+// *** Global Variables ***
+// Buffer to hold the ascii representation of the desired valve positions.
+volatile char numberBuffer[3];
+// Current state of receive interrupt.
+volatile int readState = 0;
+// Current index of buffer
+volatile int bufferIndex = 0;
+// Desired stepper motor position in steps.
+volatile int desiredStep = 0;
+// Current stepper motor position in steps.
+int currentStep = 0;
+// Desired solenoid duty cycle from 0-333
+volatile int solenoidDuty = 0;
 
-/* Private user code ---------------------------------------------------------*/
-/* USER CODE BEGIN 0 */
+/*
+ * Handles receiving from RS232. Sets desired positions.
+ */
+void USART2_IRQHandler(void)
+{
+	char readCharacter = USART2->RDR;
+	
+	// State 0 means there has been no prior transmission
+	if (readState == 0)
+	{
+		// Desired motor command sent
+		if (readCharacter == 'M')
+			readState = 1;
+		// Desired solenoid command sent
+		else if (readCharacter == 'S')
+			readState = 2;
+	}
+	
+	// Motor position incoming.
+	else if (readState == 1)
+	{
+		// End of message
+		if (readCharacter != '\n')
+		{
+			// Buffer is not full
+			if (bufferIndex < 3)
+			{
+				numberBuffer[bufferIndex] = readCharacter;
+				bufferIndex++;
+			}
+			// Buffer is full, error state.
+			else
+			{
+				readState = 0;
+				bufferIndex = 0;
+			}
+		}
+		
+	}
+	
+	else if (readState == 2)
+	{
+		
+	}
+}
+
 
 /*
  * Initializes ADC to PA2
  */
 void ADC_init(void) {
-  //Use PC0 as ADC12_IN7
+  //Use PC0 as ADC12_IN12
   //Configure to Analog Mode (MODER bits 0 and 1 to 1)
-  GPIOA->MODER |= 0x3 << 4;
+  GPIOA->MODER |= 0x3 << 14;
 
   //Set no pull-up/pull-down resistors (PUPDR bits 0 and 1 to 0)
-  GPIOA->PUPDR &= ~0x3 << 4;
+  GPIOA->PUPDR &= ~(0x3 << 14);
 
   //Enable ADC1 in RCC Peripheral
-  RCC->APB2ENR |= RCC_APB2ENR_ADCEN;
+  RCC->AHB2ENR |= RCC_AHB2ENR_ADCEN;
 
   //Configure ADC1 to 12-bit resolution, continuous conversion, hardware triggers disabled
-  ADC1->CFGR1 |= (1<<13);
-  ADC1->CFGR1 &= ~((1<<3)|(1<<4)|(1<<10)|(1<<11));
-
-  //Enable Channel 7 in the ADC
-  ADC1->CHSELR |= 1 << 7;
+  ADC1->CFGR |= (1<<13);
+  ADC1->CFGR &= ~((1<<3)|(1<<4)|(1<<5)|(1<<10)|(1<<11));
+	
+  //Enable Channel 12 in the ADC
+  //ADC1->CHSELR |= 1 << 12;
 
   //Calibrate the ADC
   //*****Clear ADEN
@@ -89,7 +119,7 @@ void ADC_init(void) {
   while ((ADC1->CR & ADC_CR_ADEN) != 0){} 
 
   //*****Clear DMAEN
-  ADC1->CFGR1 &= ~ADC_CFGR1_DMAEN;
+  ADC1->CFGR &= ~ADC_CFGR_DMAEN;
 
   //*****Start Calibratiom
   ADC1->CR |= ADC_CR_ADCAL;
@@ -107,7 +137,7 @@ void ADC_init(void) {
   ADC1->CR |= ADC_CR_ADEN;
 
   //*****Wait until the ADC is ready
-  while ((ADC1->ISR & ADC_ISR_ADRDY) == 0) {}
+  while (!(ADC1->ISR & ADC_ISR_ADRDY)) {}
 
   //*****Start the ADC
   ADC1->CR |= ADC_CR_ADSTART;
@@ -116,8 +146,8 @@ void ADC_init(void) {
 /*                                                                                                                                                                                                         
  * Converts integer to asci byte array                                                                                                                                                                     
  */
-char* convert(uint_16 num) {
-  static char bytes[] = {'0','0','0','0','\0'};
+char* int_to_string(uint16_t num) {
+  static char bytes[] = {'0','0','0','0','\n','\0'};
 
   int i = 0;
   while(num != 0) {
@@ -134,8 +164,8 @@ char* convert(uint_16 num) {
  */
 void check_ADC(void) {
     //Read ADC Data
-    uint16_t data = ADC1->DR & 0xFFF;
-    char* value = convert(data);
+    uint16_t data = ADC1->DR;// & 0xFFF;
+    char* value = int_to_string(data);
     
     //Transmit the value
     transmitString(value);
@@ -193,16 +223,44 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_USART2_UART_Init();
-  MX_ADC1_Init();
+  // MX_USART2_UART_Init();
+  // MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
+	
+	
+	// Initialize the USART3 module TX is PA2, RX is PA3
+	// Set moder to alternate function 10. Clear bit, then set bit.
+	GPIOA->MODER &= ~((1 << 4) | (1 << 6));
+	GPIOA->MODER |= ((1 << 5) | (1 << 7));
+	// Set the alternate functions of each pin. Alternate Function 7 (0111) on both.
+	GPIOA->AFR[0] &= ~((1 << 11) | (1 << 15));
+	// Set the last bits next
+	GPIOA->AFR[0] |= ((7 << 8) | (7 << 12));
+	
+	// Route clock
+	RCC->APB1ENR1 |= (1 << 17);
+	// RCC->APB1ENR1 |= RCC_APB1ENR1_USART2EN;
+	// Set baud rate 115200
+	USART2->BRR = (HAL_RCC_GetHCLKFreq() / 115200);
+	// Enable the transmitter and receiver
+	USART2->CR1 |= ((1 << 2) | (1 << 3));
+	// Enable receive not empty interrupt
+	USART2->CR1 |= (1 << 5);
+	// Enable the peripheral
+	USART2->CR1 |= (1 << 0);
+	
+	// Configure the NVIC
+	// Enable the interrupt
+	NVIC_EnableIRQ(USART2_IRQn);
+	// Set the priority of the interrupt
+	NVIC_SetPriority(USART2_IRQn, 1);
 	
 	// Enable the stepper motor
 	GPIOB->ODR &= ~(1 << 0);
 	// Set the direction
   GPIOB->ODR |= (1 << 6);
-	
-	uint8_t toSendBuffer[] = "Hello World. \r\n";
+	// Initialize ADC
+	//ADC_init();
 	
 	/* USER CODE END 2 */
 
@@ -214,7 +272,8 @@ int main(void)
 		// Step the motor.
 		// GPIOB->ODR ^= (1 << 7);
 		transmitString("Hello");
-		// HAL_UART_Transmit_IT(&huart2, (uint8_t *)toSendBuffer, sizeof(toSendBuffer));
+		//check_ADC();
+		
 		GPIOB->ODR ^= (1 << 3);
 		HAL_Delay(10);
     /* USER CODE BEGIN 3 */
