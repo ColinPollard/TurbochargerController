@@ -3,7 +3,7 @@
 <title>Static Call Graph - [TurbochargerController\TurbochargerController.axf]</title></head>
 <body><HR>
 <H1>Static Call Graph for image TurbochargerController\TurbochargerController.axf</H1><HR>
-<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5060960: Last Updated: Sun May 02 14:46:25 2021
+<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5060960: Last Updated: Sun May 02 15:21:23 2021
 <BR><P>
 <H3>Maximum Stack Usage =        216 bytes + Unknown(Cycles, Untraceable Function Pointers)</H3><H3>
 Call chain for Maximum Stack Depth:</H3>
@@ -84,7 +84,7 @@ Function Pointers
  <LI><a href="#[2e]">TIM6_IRQHandler</a> from startup_stm32l412xx.o(.text) referenced from startup_stm32l412xx.o(RESET)
  <LI><a href="#[3e]">TSC_IRQHandler</a> from startup_stm32l412xx.o(.text) referenced from startup_stm32l412xx.o(RESET)
  <LI><a href="#[29]">USART1_IRQHandler</a> from startup_stm32l412xx.o(.text) referenced from startup_stm32l412xx.o(RESET)
- <LI><a href="#[2a]">USART2_IRQHandler</a> from startup_stm32l412xx.o(.text) referenced from startup_stm32l412xx.o(RESET)
+ <LI><a href="#[2a]">USART2_IRQHandler</a> from main.o(i.USART2_IRQHandler) referenced from startup_stm32l412xx.o(RESET)
  <LI><a href="#[2b]">USART3_IRQHandler</a> from startup_stm32l412xx.o(.text) referenced from startup_stm32l412xx.o(RESET)
  <LI><a href="#[37]">USB_IRQHandler</a> from startup_stm32l412xx.o(.text) referenced from startup_stm32l412xx.o(RESET)
  <LI><a href="#[5]">UsageFault_Handler</a> from stm32l4xx_it.o(i.UsageFault_Handler) referenced from startup_stm32l412xx.o(RESET)
@@ -282,9 +282,6 @@ Global Symbols
 <BR>[Address Reference Count : 1]<UL><LI> startup_stm32l412xx.o(RESET)
 </UL>
 <P><STRONG><a name="[29]"></a>USART1_IRQHandler</STRONG> (Thumb, 0 bytes, Stack size 0 bytes, startup_stm32l412xx.o(.text))
-<BR>[Address Reference Count : 1]<UL><LI> startup_stm32l412xx.o(RESET)
-</UL>
-<P><STRONG><a name="[2a]"></a>USART2_IRQHandler</STRONG> (Thumb, 0 bytes, Stack size 0 bytes, startup_stm32l412xx.o(.text))
 <BR>[Address Reference Count : 1]<UL><LI> startup_stm32l412xx.o(RESET)
 </UL>
 <P><STRONG><a name="[2b]"></a>USART3_IRQHandler</STRONG> (Thumb, 0 bytes, Stack size 0 bytes, startup_stm32l412xx.o(.text))
@@ -519,6 +516,9 @@ Global Symbols
 <P><STRONG><a name="[43]"></a>SystemInit</STRONG> (Thumb, 56 bytes, Stack size 0 bytes, system_stm32l4xx.o(i.SystemInit))
 <BR>[Address Reference Count : 1]<UL><LI> startup_stm32l412xx.o(.text)
 </UL>
+<P><STRONG><a name="[2a]"></a>USART2_IRQHandler</STRONG> (Thumb, 108 bytes, Stack size 0 bytes, main.o(i.USART2_IRQHandler))
+<BR>[Address Reference Count : 1]<UL><LI> startup_stm32l412xx.o(RESET)
+</UL>
 <P><STRONG><a name="[5]"></a>UsageFault_Handler</STRONG> (Thumb, 2 bytes, Stack size 0 bytes, stm32l4xx_it.o(i.UsageFault_Handler))
 <BR><BR>[Calls]<UL><LI><a href="#[5]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;UsageFault_Handler
 </UL>
@@ -532,7 +532,7 @@ Global Symbols
 
 <P><STRONG><a name="[73]"></a>__scatterload_zeroinit</STRONG> (Thumb, 14 bytes, Stack size unknown bytes, handlers.o(i.__scatterload_zeroinit), UNUSED)
 
-<P><STRONG><a name="[42]"></a>main</STRONG> (Thumb, 134 bytes, Stack size 0 bytes, main.o(i.main))
+<P><STRONG><a name="[42]"></a>main</STRONG> (Thumb, 160 bytes, Stack size 0 bytes, main.o(i.main))
 <BR><BR>[Stack]<UL><LI>Max Depth = 216<LI>Call Chain = main &rArr; SystemClock_Config &rArr; HAL_RCC_OscConfig &rArr; HAL_InitTick &rArr; HAL_NVIC_SetPriority
 </UL>
 <BR>[Calls]<UL><LI><a href="#[63]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_RCC_GetHCLKFreq

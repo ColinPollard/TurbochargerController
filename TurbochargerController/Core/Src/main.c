@@ -61,17 +61,27 @@ void USART2_IRQHandler(void)
 			readState = 2;
 	}
 	
-	// Motor position incoming.
-	else if (readState == 1)
+	// Numbers Incoming.
+	else if (readState == 1 || readState == 2)
 	{
-		// End of message
+		// Not end of line
 		if (readCharacter != '\n')
 		{
 			// Buffer is not full
 			if (bufferIndex < 3)
 			{
-				numberBuffer[bufferIndex] = readCharacter;
-				bufferIndex++;
+				// Check that number is in range
+				if (readCharacter > '0' && readCharacter < '9')
+				{
+					numberBuffer[bufferIndex] = readCharacter;
+					bufferIndex++;
+				}
+				// Invalid character received, error state.
+				else 
+				{
+					readState = 0;
+					bufferIndex = 0;
+				}
 			}
 			// Buffer is full, error state.
 			else
@@ -80,12 +90,27 @@ void USART2_IRQHandler(void)
 				bufferIndex = 0;
 			}
 		}
-		
-	}
-	
-	else if (readState == 2)
-	{
-		
+		// End line received
+		else
+		{
+			// Check that the buffer is full
+			if (bufferIndex == 3)
+			{
+				// Convert the string to an integer
+				int temp = 0;//string_to_int(&numberBuffer);
+				// Motor command was processed
+				if (readState == 1)
+					desiredStep = temp;
+				else if (readState == 2)
+					solenoidDuty = temp;
+			}
+			// Buffer not full, error state
+			else
+			{
+				readState = 0;
+				bufferIndex = 0;
+			}
+		}
 	}
 }
 
