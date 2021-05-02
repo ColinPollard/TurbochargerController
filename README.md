@@ -18,10 +18,6 @@ For this implementation, there are two major devices. The first is a raspberrypi
 * The pressure sensor is read from the ADC in a continuous conversion mode. The value is read during the RS232 transmission timer update.
 
 ## Hardware Design:
-![Block Diagram](/images/blockdiagram.PNG)
-
-![Schematic](/images/TurbochargerController.jpg)
-
 ### Microcontroller
 The microcontroller selected for this project is the NucleoL412KB. This is an STM32 board based around the cortex M4 core, packaged inside an arduino nano form factor. This was preferable for our project, since two headers can be placed on the PCB instead of a full microcontroller implementation. Pins were selected such that the timer peripheral, analog to digital converter, USART, and GPIO could be utilized most effectively for each of the applications below. Power to the system is supplied through the external 5v input, 3.3V power is generated through the MCU's onboard voltage regulator.
 
@@ -46,3 +42,9 @@ The bypass valve is actuated using a 12v 32Hz PWM signal. In order to drive this
 A MAX3232 RS232 driver was utilized to convert the UART signal from the microcontroller to RS232 levels. This converter utilizes four external 0.1uF capacitors with a charge pump to increase the 3.3V supply to the correct level for communication.
 
 ![RS232 Driver Schematic](/images/rs232schematic.PNG)
+
+---
+
+![Block Diagram](/images/blockdiagram.PNG)
+
+![Schematic](/images/TurbochargerController.jpg)
