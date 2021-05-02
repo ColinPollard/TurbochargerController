@@ -166,9 +166,9 @@ char* int_to_string(uint16_t num) {
 uint8_t string_to_int(char* str) {
   char t;
   uint8_t num = 0;
-  for(int i = 2; i >= 0; i--) {
+  for(int i = 0; i < 3; i++) {
     t = str[i];
-    uint8_t dig = (uint8_t)t - 48;
+    uint8_t dig = t - 48;
     num *= 10;
     num += dig;
   }
