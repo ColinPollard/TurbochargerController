@@ -28,6 +28,7 @@ static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_ADC1_Init(void);
 void transmitString(char* input);
+uint8_t string_to_int(char* str);
 
 // *** Global Variables ***
 // Buffer to hold the ascii representation of the desired valve positions.
@@ -157,6 +158,21 @@ char* int_to_string(uint16_t num) {
     num /= 10;
   }
   return bytes;
+}
+
+/*
+ * Converts a 3-digit string representing an integer to an integer type
+ */
+uint8_t string_to_int(char* str) {
+  char t;
+  uint8_t num = 0;
+  for(int i = 2; i >= 0; i--) {
+    t = str[i];
+    uint8_t dig = (uint8_t)t - 48;
+    num *= 10;
+    num += dig;
+  }
+  return num;
 }
 
 /*
