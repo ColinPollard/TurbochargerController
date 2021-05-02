@@ -186,6 +186,7 @@ void SysTick_Handler(void)
   /* USER CODE BEGIN SysTick_IRQn 0 */
 	// Create a system heartbeat through the led.
 	counter++;
+	// Handle motor movement.
 	if (counter > 100)
 	{
 		// GPIOB->ODR ^= (1 << 3);

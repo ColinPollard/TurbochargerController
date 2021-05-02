@@ -28,7 +28,7 @@ static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_ADC1_Init(void);
 void transmitString(char* input);
-uint8_t string_to_int(char* str);
+uint8_t string_to_int(volatile char* str);
 
 // *** Global Variables ***
 // Buffer to hold the ascii representation of the desired valve positions.
@@ -38,83 +38,13 @@ volatile int readState = 0;
 // Current index of buffer
 volatile int bufferIndex = 0;
 // Desired stepper motor position in steps.
-volatile int desiredStep = 0;
+volatile uint8_t desiredStep = 0;
 // Current stepper motor position in steps.
 int currentStep = 0;
 // Desired solenoid duty cycle from 0-333
 volatile int solenoidDuty = 0;
 
-/*
- * Handles receiving from RS232. Sets desired positions.
- */
-void USART2_IRQHandler(void)
-{
-	char readCharacter = USART2->RDR;
-	
-	// State 0 means there has been no prior transmission
-	if (readState == 0)
-	{
-		// Desired motor command sent
-		if (readCharacter == 'M')
-			readState = 1;
-		// Desired solenoid command sent
-		else if (readCharacter == 'S')
-			readState = 2;
-	}
-	
-	// Numbers Incoming.
-	else if (readState == 1 || readState == 2)
-	{
-		// Not end of line
-		if (readCharacter != '\n')
-		{
-			// Buffer is not full
-			if (bufferIndex < 3)
-			{
-				// Check that number is in range
-				if (readCharacter > '0' && readCharacter < '9')
-				{
-					numberBuffer[bufferIndex] = readCharacter;
-					bufferIndex++;
-				}
-				// Invalid character received, error state.
-				else 
-				{
-					readState = 0;
-					bufferIndex = 0;
-				}
-			}
-			// Buffer is full, error state.
-			else
-			{
-				readState = 0;
-				bufferIndex = 0;
-			}
-		}
-		// End line received
-		else
-		{
-			// Check that the buffer is full
-			if (bufferIndex == 3)
-			{
-				// Convert the string to an integer
-				int temp = 0;//string_to_int(&numberBuffer);
-				// Motor command was processed
-				if (readState == 1)
-					desiredStep = temp;
-				else if (readState == 2)
-					solenoidDuty = temp;
-			}
-			// Buffer not full, error state
-			else
-			{
-				readState = 0;
-				bufferIndex = 0;
-			}
-		}
-	}
-}
-
+volatile char bytes[] = {'0','0','0','0','\n','\r','\0'};
 
 /*
  * Initializes ADC to PA2
@@ -122,10 +52,10 @@ void USART2_IRQHandler(void)
 void ADC_init(void) {
   //Use PC0 as ADC12_IN12
   //Configure to Analog Mode (MODER bits 0 and 1 to 1)
-  GPIOA->MODER |= 0x3 << 14;
+  GPIOA->MODER |= 0x3 << 2;
 
   //Set no pull-up/pull-down resistors (PUPDR bits 0 and 1 to 0)
-  GPIOA->PUPDR &= ~(0x3 << 14);
+  GPIOA->PUPDR &= ~(0x3 << 2);
 
   //Enable ADC1 in RCC Peripheral
   RCC->AHB2ENR |= RCC_AHB2ENR_ADCEN;
@@ -136,7 +66,8 @@ void ADC_init(void) {
 	
   //Enable Channel 12 in the ADC
   //ADC1->CHSELR |= 1 << 12;
-
+	ADC1->DIFSEL |= 1 << 6;
+	
   //Calibrate the ADC
   //*****Clear ADEN
   if ((ADC1->CR & ADC_CR_ADEN) != 0) {
@@ -172,8 +103,10 @@ void ADC_init(void) {
 /*                                                                                                                                                                                                         
  * Converts integer to asci byte array                                                                                                                                                                     
  */
-char* int_to_string(uint16_t num) {
-  static char bytes[] = {'0','0','0','0','\n','\0'};
+volatile char* int_to_string(uint16_t num) {
+  for(int i = 0; i < 4; i++) {
+		bytes[i] = '0';
+	}
 
   int i = 0;
   while(num != 0) {
@@ -188,7 +121,7 @@ char* int_to_string(uint16_t num) {
 /*
  * Converts a 3-digit string representing an integer to an integer type
  */
-uint8_t string_to_int(char* str) {
+uint8_t string_to_int(volatile char* str) {
   char t;
   uint8_t num = 0;
   for(int i = 0; i < 3; i++) {
@@ -206,22 +139,26 @@ uint8_t string_to_int(char* str) {
 void check_ADC(void) {
     //Read ADC Data
     uint16_t data = ADC1->DR;// & 0xFFF;
-    char* value = int_to_string(data);
+/*		if (data > 100)
+					GPIOB->ODR |= (1 << 3);
+		else
+			GPIOB->ODR &= ~(1 << 3);*/
+    volatile char* value = int_to_string(data);
     
     //Transmit the value
-    transmitString(value);
+    transmitString((char*)value);
 }
 
 // Character transmitting function
 void transmitChar(char input)
 {
 	// Check and wait for the USART transmit status flag. (Transmit data register empty TXE)
-	while(!(USART2->ISR & (1 << 7)))
+	while(!(USART1->ISR & (1 << 7)))
 	{
 		// Do Nothing
 	}
 	// Write character into transmit data register
-	USART2->TDR = input;
+	USART1->TDR = input;
 }
 
 // Transmit an entire string
@@ -233,6 +170,91 @@ void transmitString(char* input)
 		transmitChar(input[index]);
 	}
 }
+
+/*
+ * Handles receiving from RS232. Sets desired positions.
+ */
+void USART1_IRQHandler(void)
+{
+	char readCharacter = USART1->RDR;
+	transmitChar(readCharacter);
+	
+	// State 0 means there has been no prior transmission
+	if (readState == 0)
+	{
+		// transmitString("Initial\r\n");
+		// Desired motor command sent
+		if (readCharacter == 'M')
+			readState = 1;
+		// Desired solenoid command sent
+		else if (readCharacter == 'S')
+			readState = 2;
+	}
+	
+	// Numbers Incoming.
+	else if (readState == 1 || readState == 2)
+	{
+		// Not end of line
+		if (readCharacter != '\n')
+		{
+			// Buffer is not full
+			if (bufferIndex < 3)
+			{
+				// Check that number is in range
+				if (readCharacter >= '0' && readCharacter <= '9')
+				{
+					if(readCharacter == '0')
+						transmitChar('P');
+					// transmitString("Added number\r\n");
+					numberBuffer[bufferIndex] = readCharacter;
+					bufferIndex++;
+				}
+				// Invalid character received, error state.
+				else 
+				{
+					transmitString("Error 1\r\n");
+					readState = 0;
+					bufferIndex = 0;
+				}
+			}
+			// Buffer is full, error state.
+			else
+			{
+				transmitString("Error 2\r\n");
+				readState = 0;
+				bufferIndex = 0;
+			}
+		}
+		// End line received
+		else
+		{
+			// Check that the buffer is full
+			if (bufferIndex == 3)
+			{
+				// Convert the string to an integer
+				uint8_t temp = string_to_int(numberBuffer);
+				
+				// Motor command was processed
+				if (readState == 1)
+					desiredStep = temp;
+					
+				else if (readState == 2)
+					solenoidDuty = temp;
+				
+				bufferIndex = 0;
+				readState = 0;
+			}
+			// Buffer not full, error state
+			else
+			{
+				transmitString("Error 3\r\n");
+				readState = 0;
+				bufferIndex = 0;
+			}
+		}
+	}
+}
+
 
 /* USER CODE END 0 */
 
@@ -269,39 +291,42 @@ int main(void)
   /* USER CODE BEGIN 2 */
 	
 	
-	// Initialize the USART3 module TX is PA2, RX is PA3
+	// Don't Initialize the USART3 module TX is PA2, RX is PA3
+	// Initialize the USART2 module TX is PA9, RX is PA10
 	// Set moder to alternate function 10. Clear bit, then set bit.
-	GPIOA->MODER &= ~((1 << 4) | (1 << 6));
-	GPIOA->MODER |= ((1 << 5) | (1 << 7));
+	GPIOA->MODER &= ~((1 << 18) | (1 << 20));
+	GPIOA->MODER |= ((1 << 19) | (1 << 21));
 	// Set the alternate functions of each pin. Alternate Function 7 (0111) on both.
-	GPIOA->AFR[0] &= ~((1 << 11) | (1 << 15));
+	GPIOA->AFR[1] &= ~((1 << 7) | (1 << 11));
 	// Set the last bits next
-	GPIOA->AFR[0] |= ((7 << 8) | (7 << 12));
+	GPIOA->AFR[1] |= ((7 << 4) | (7 << 8));
 	
 	// Route clock
-	RCC->APB1ENR1 |= (1 << 17);
+	// RCC->APB1ENR1 |= (1 << 17);
+	__HAL_RCC_USART1_CLK_ENABLE();
+
 	// RCC->APB1ENR1 |= RCC_APB1ENR1_USART2EN;
 	// Set baud rate 115200
-	USART2->BRR = (HAL_RCC_GetHCLKFreq() / 115200);
+	USART1->BRR = (HAL_RCC_GetHCLKFreq() / 115200);
 	// Enable the transmitter and receiver
-	USART2->CR1 |= ((1 << 2) | (1 << 3));
+	USART1->CR1 |= ((1 << 2) | (1 << 3));
 	// Enable receive not empty interrupt
-	USART2->CR1 |= (1 << 5);
+	USART1->CR1 |= (1 << 5);
 	// Enable the peripheral
-	USART2->CR1 |= (1 << 0);
+	USART1->CR1 |= (1 << 0);
 	
 	// Configure the NVIC
 	// Enable the interrupt
-	NVIC_EnableIRQ(USART2_IRQn);
+	NVIC_EnableIRQ(USART1_IRQn);
 	// Set the priority of the interrupt
-	NVIC_SetPriority(USART2_IRQn, 1);
+	NVIC_SetPriority(USART1_IRQn, 1);
 	
 	// Enable the stepper motor
 	GPIOB->ODR &= ~(1 << 0);
 	// Set the direction
   GPIOB->ODR |= (1 << 6);
 	// Initialize ADC
-	//ADC_init();
+	ADC_init();
 	
 	/* USER CODE END 2 */
 
@@ -312,11 +337,13 @@ int main(void)
     /* USER CODE END WHILE */
 		// Step the motor.
 		// GPIOB->ODR ^= (1 << 7);
-		transmitString("Hello");
+		// transmitString("Hello");
 		//check_ADC();
 		
 		GPIOB->ODR ^= (1 << 3);
-		HAL_Delay(10);
+		transmitString(int_to_string(desiredStep));
+		
+		HAL_Delay(1000);
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
