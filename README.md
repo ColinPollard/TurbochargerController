@@ -4,7 +4,7 @@ This project implements an absolute pressure turbocharger controller, suited for
 ## Hardware Design:
 ![Block Diagram](/images/blockdiagram.PNG)
 
-![Schematic](/images/TurbochargerController.PNG)
+![Schematic](/images/TurbochargerController.jpg)
 
 ### Microcontroller
 The microcontroller selected for this project is the NucleoL412KB. This is an STM32 board based around the cortex M4 core, packaged inside an arduino nano form factor. This was preferable for our project, since two headers can be placed on the PCB instead of a full microcontroller implementation. Pins were selected such that the timer peripheral, analog to digital converter, USART, and GPIO could be utilized most effectively for each of the applications below. Power to the system is supplied through the external 5v input, 3.3V power is generated through the MCU's onboard voltage regulator.
