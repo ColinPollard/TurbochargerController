@@ -5,7 +5,7 @@ This project implements an absolute pressure turbocharger controller, suited for
 ![Block Diagram](/../../images/blockdiagram.png)
 ### Pressure Sensor
 The pressure sensor used in this design is the NPP301. This sensor is an absolute pressure sensor capable of sensing up to 100psi. The device acts as a wheatstone bridge, where the resistance varies based on pressure. The sensor is connected to a two-stage amplifier stage, with a potentiometer available for sensitivity adjustment. This output feeds into the ADC12_channel1 of the microcontroller. 
-![Pressure Sensor Schematic](/../../images/pressureschematic.png)
+![Pressure Sensor Schematic](/images/pressureschematic.png)
 ### Stepper Motor Driver:
 The stepper motor driving stage is created using an A4988 "Stepstick" shield. Three general purpose output pins are used to drive the enable, direction, and step pins. The output of the motor is routed to a four-place screw terminal block for easy wiring to motors. Microstepping settings are selectable using a semi-permanent solder bridge feature on the back of the board.
 ![Stepper Motor Schematic](/../../images/stepperschematic.png)
