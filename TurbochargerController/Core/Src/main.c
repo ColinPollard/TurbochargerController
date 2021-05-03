@@ -38,9 +38,9 @@ volatile int readState = 0;
 // Current index of buffer
 volatile int bufferIndex = 0;
 // Desired stepper motor position in steps.
-volatile uint8_t desiredStep = 0;
+volatile uint8_t desiredStep = 1;
 // Current stepper motor position in steps.
-int currentStep = 0;
+int currentStep = 1;
 // Desired solenoid duty cycle from 0-333
 volatile int solenoidDuty = 0;
 
@@ -250,7 +250,33 @@ void USART1_IRQHandler(void)
 }
 
 
-/* USER CODE END 0 */
+void PWM_init(void){
+	__HAL_RCC_TIM2_CLK_ENABLE();
+	TIM2->PSC = 2999;
+	TIM2->ARR = 333;
+	
+	// OC2M CONFIGURE TO PCM MODE 1
+	TIM2->CCMR1 &= ~(1 << 6 | 1 << 5 | 1 << 4);
+	TIM2->CCMR1 |= (1 << 6 | 1 << 5);
+	
+	//Enable ccer output
+	TIM2->CCER |= 1 << 0;
+	
+	//50% duty cycle
+	TIM2->CCR1 = 0;
+	
+	//Set pa5 to alt function
+	GPIOA->MODER &= ~(1 << 11 | 1 << 10);
+	GPIOA->MODER |= 1 << 11;
+	
+	//pa5 alt function 1 = TIM2_CH1
+	GPIOA->AFR[0] &= ~(GPIO_AFRL_AFSEL5);
+	GPIOA->AFR[0] |= 1 << 20; // choose alt function 0001
+	
+	
+	//Enable counter last
+	TIM2->CR1 |= (1 << 0);
+}
 
 /**
   * @brief  The application entry point.
@@ -322,6 +348,7 @@ int main(void)
 	// Initialize ADC
 	ADC_init();
 	
+	PWM_init();
 	/* USER CODE END 2 */
 
   /* Infinite loop */
@@ -335,6 +362,7 @@ int main(void)
 		//check_ADC();
 		
 		GPIOB->ODR ^= (1 << 3);
+		transmitString("Current Motor Position: ");
 		transmitString(int_to_string(desiredStep));
 		
 		HAL_Delay(1000);
@@ -499,18 +527,19 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(Solenoid_Control_GPIO_Port, Solenoid_Control_Pin, GPIO_PIN_RESET);
+  //HAL_GPIO_WritePin(Solenoid_Control_GPIO_Port, Solenoid_Control_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, Step_Enable_Pin|LED_Pin|Step_Dir_Pin|Step_Step_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : Solenoid_Control_Pin */
+	/*
   GPIO_InitStruct.Pin = Solenoid_Control_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(Solenoid_Control_GPIO_Port, &GPIO_InitStruct);
-
+	*/
   /*Configure GPIO pins : Step_Enable_Pin LED_Pin Step_Dir_Pin Step_Step_Pin */
   GPIO_InitStruct.Pin = Step_Enable_Pin|LED_Pin|Step_Dir_Pin|Step_Step_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
