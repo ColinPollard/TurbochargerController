@@ -60,14 +60,6 @@ void ADC_init(void) {
   //Enable ADC1 in RCC Peripheral
   RCC->AHB2ENR |= RCC_AHB2ENR_ADCEN;
 
-  //Configure ADC1 to 12-bit resolution, continuous conversion, hardware triggers disabled
-  ADC1->CFGR |= (1<<13);
-  ADC1->CFGR &= ~((1<<3)|(1<<4)|(1<<5)|(1<<10)|(1<<11));
-
-  //Enable Channel 12 in the ADC
-  //ADC1->CHSELR |= 1 << 12;
-  ADC1->DIFSEL &= ~(1 << 12);
-
   //Ensure DEEPPWD is set to 0
   if((ADC1 -> CR & ADC_CR_DEEPPWD))
     ADC1->CR &= ~ADC_CR_DEEPPWD;
@@ -75,6 +67,14 @@ void ADC_init(void) {
   //Set ADVREGEN to enable voltage regualtor start up
   ADC1->CR |= ADC_CR_ADVREGEN;
   HAL_Delay(1); // Wait for voltage regulator
+
+  //Configure ADC1 to 12-bit resolution, continuous conversion, hardware triggers disabled
+  ADC1->CFGR |= (1<<13);
+  ADC1->CFGR &= ~((1<<3)|(1<<4)|(1<<5)|(1<<10)|(1<<11));
+
+  //Enable Channel 12 in the ADC
+  //ADC1->CHSELR |= 1 << 12;
+  ADC1->DIFSEL &= ~(1 << 12);
 
   //Calibrate the ADC
   //*****Clear ADEN
