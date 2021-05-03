@@ -63,27 +63,38 @@ void ADC_init(void) {
   //Configure ADC1 to 12-bit resolution, continuous conversion, hardware triggers disabled
   ADC1->CFGR |= (1<<13);
   ADC1->CFGR &= ~((1<<3)|(1<<4)|(1<<5)|(1<<10)|(1<<11));
-	
+
   //Enable Channel 12 in the ADC
   //ADC1->CHSELR |= 1 << 12;
-	ADC1->DIFSEL |= 1 << 6;
-	
+  ADC1->DIFSEL &= ~(1 << 12);
+
+  //Ensure DEEPPWD is set to 0
+  if((ADC1 -> CR & ADC_CR_DEEPPWD))
+    ADC1->CR &= ~ADC_CR_DEEPPWD;
+
+  //Set ADVREGEN to enable voltage regualtor start up
+  ADC1->CR |= ADC_CR_ADVREGEN;
+  HAL_Delay(1); // Wait for voltage regulator
+
   //Calibrate the ADC
   //*****Clear ADEN
   if ((ADC1->CR & ADC_CR_ADEN) != 0) {
     ADC1->CR |= ADC_CR_ADDIS;
   }
-  while ((ADC1->CR & ADC_CR_ADEN) != 0){} 
+  while ((ADC1->CR & ADC_CR_ADEN) != 0){}
+
+  //Set to single-ended input conversion
+  ADC1->CR &= ~(1 << 30);
 
   //*****Clear DMAEN
   ADC1->CFGR &= ~ADC_CFGR_DMAEN;
 
   //*****Start Calibratiom
   ADC1->CR |= ADC_CR_ADCAL;
-
+ 
   //*****Wait until calibration is complete
   while ((ADC1->CR & ADC_CR_ADCAL) != 0) {}
-  
+ 
   //Enable/start the ADC
   //*****Clear ADRDY
   if ((ADC1->ISR & ADC_ISR_ADRDY) != 0) {
@@ -96,6 +107,10 @@ void ADC_init(void) {
   //*****Wait until the ADC is ready
   while (!(ADC1->ISR & ADC_ISR_ADRDY)) {}
 
+  //Select channel 12 and select one conversion
+  ADC1->SQR1 &= ~(0xF | (0x1F << 6));
+  ADC1->SQR1 |= (12 << 6);
+  
   //*****Start the ADC
   ADC1->CR |= ADC_CR_ADSTART;
 }
