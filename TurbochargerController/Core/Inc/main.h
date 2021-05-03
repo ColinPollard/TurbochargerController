@@ -78,7 +78,8 @@ void Error_Handler(void);
 #define Step_Step_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 extern int currentStep;
-extern volatile uint8_t desiredStep;
+extern volatile uint16_t desiredPressure;
+extern volatile uint16_t actualPressure;
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

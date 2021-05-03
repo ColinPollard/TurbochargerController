@@ -28,7 +28,7 @@ static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_ADC1_Init(void);
 void transmitString(char* input);
-uint8_t string_to_int(volatile char* str);
+uint16_t string_to_int(volatile char* str);
 
 // *** Global Variables ***
 // Buffer to hold the ascii representation of the desired valve positions.
@@ -38,24 +38,26 @@ volatile int readState = 0;
 // Current index of buffer
 volatile int bufferIndex = 0;
 // Desired stepper motor position in steps.
-volatile uint8_t desiredStep = 1;
+volatile uint16_t desiredPressure = 1;
 // Current stepper motor position in steps.
 int currentStep = 1;
 // Desired solenoid duty cycle from 0-333
 volatile int solenoidDuty = 0;
+// Current pressure
+volatile uint16_t actualPressure = 0;
 
-volatile char bytes[] = {'0','0','0','0','\n','\r','\0'};
+volatile char bytes[] = {'0','0','0','0','\n','\0'};
 
 /*
- * Initializes ADC to PA2
+ * Initializes ADC to PA7
  */
 void ADC_init(void) {
-  //Use PC0 as ADC12_IN12
+  //Use PA7 as ADC12_IN12
   //Configure to Analog Mode (MODER bits 0 and 1 to 1)
-  GPIOA->MODER |= 0x3 << 2;
+  GPIOA->MODER |= 0x3 << 14;
 
   //Set no pull-up/pull-down resistors (PUPDR bits 0 and 1 to 0)
-  GPIOA->PUPDR &= ~(0x3 << 2);
+  GPIOA->PUPDR &= ~(0x3 << 14);
 
   //Enable ADC1 in RCC Peripheral
   RCC->AHB2ENR |= RCC_AHB2ENR_ADCEN;
@@ -69,13 +71,16 @@ void ADC_init(void) {
   HAL_Delay(1); // Wait for voltage regulator
 
   //Configure ADC1 to 12-bit resolution, continuous conversion, hardware triggers disabled
-  ADC1->CFGR |= (1<<13);
-  ADC1->CFGR &= ~((1<<3)|(1<<4)|(1<<5)|(1<<10)|(1<<11));
+  //ADC1->CFGR |= (1<<13);
+  ADC1->CFGR &= ~((1<<3)|(1<<4)|(1<<5)|(1<<10)|(1<<11)|(1<<16)|(1<<14)|(1<<31)|(1<<25)|(1<<24)|(1<<23)|(1<<13));
 
   //Enable Channel 12 in the ADC
   //ADC1->CHSELR |= 1 << 12;
   ADC1->DIFSEL &= ~(1 << 12);
 
+	//Set to single-ended input conversion
+  ADC1->CR &= ~(1 << 30);
+	
   //Calibrate the ADC
   //*****Clear ADEN
   if ((ADC1->CR & ADC_CR_ADEN) != 0) {
@@ -83,11 +88,8 @@ void ADC_init(void) {
   }
   while ((ADC1->CR & ADC_CR_ADEN) != 0){}
 
-  //Set to single-ended input conversion
-  ADC1->CR &= ~(1 << 30);
-
   //*****Clear DMAEN
-  ADC1->CFGR &= ~ADC_CFGR_DMAEN;
+  //ADC1->CFGR &= ~ADC_CFGR_DMAEN;
 
   //*****Start Calibratiom
   ADC1->CR |= ADC_CR_ADCAL;
@@ -136,32 +138,16 @@ volatile char* int_to_string(uint16_t num) {
 /*
  * Converts a 3-digit string representing an integer to an integer type
  */
-uint8_t string_to_int(volatile char* str) {
+uint16_t string_to_int(volatile char* str) {
   char t;
-  uint8_t num = 0;
+  uint16_t num = 0;
   for(int i = 0; i < 3; i++) {
     t = str[i];
-    uint8_t dig = t - 48;
+    uint16_t dig = t - 48;
     num *= 10;
     num += dig;
   }
   return num;
-}
-
-/*
- * Reads value of ADC and transmits through UART
- */
-void check_ADC(void) {
-    //Read ADC Data
-    uint16_t data = ADC1->DR;// & 0xFFF;
-/*		if (data > 100)
-					GPIOB->ODR |= (1 << 3);
-		else
-			GPIOB->ODR &= ~(1 << 3);*/
-    volatile char* value = int_to_string(data);
-    
-    //Transmit the value
-    transmitString((char*)value);
 }
 
 // Character transmitting function
@@ -199,7 +185,7 @@ void USART1_IRQHandler(void)
 	{
 		// transmitString("Initial\r\n");
 		// Desired motor command sent
-		if (readCharacter == 'M')
+		if (readCharacter == 'P')
 			readState = 1;
 		// Desired solenoid command sent
 		else if (readCharacter == 'S')
@@ -242,11 +228,11 @@ void USART1_IRQHandler(void)
 			if (bufferIndex == 3)
 			{
 				// Convert the string to an integer
-				uint8_t temp = string_to_int(numberBuffer);
+				uint16_t temp = string_to_int(numberBuffer);
 				
 				// Motor command was processed
 				if (readState == 1)
-					desiredStep = temp;
+					desiredPressure = temp;
 					
 				else if (readState == 2)
 					TIM2->CCR1 = temp;
@@ -318,11 +304,12 @@ int main(void)
   /* USER CODE BEGIN SysInit */
 
   /* USER CODE END SysInit */
-
+	
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   // MX_USART2_UART_Init();
-  // MX_ADC1_Init();
+  //MX_ADC1_Init();
+	
   /* USER CODE BEGIN 2 */
 	
 	
@@ -372,14 +359,14 @@ int main(void)
   {
     /* USER CODE END WHILE */
 		// Step the motor.
-		// 
-		// transmitString("Hello");
-		// check_ADC();
 
-		GPIOB->ODR ^= (1 << 3);
-		transmitString("Current Motor Position: ");
-		transmitString(int_to_string(desiredStep));
-		
+		transmitString("Current Pressure Reading: ");
+		volatile char* value = int_to_string(actualPressure);
+    //Transmit the value
+    transmitString((char*)value);
+		transmitString("Desired Pressure Reading: ");
+		transmitString(int_to_string(desiredPressure));
+		transmitChar('\n');
 		HAL_Delay(1000);
     /* USER CODE BEGIN 3 */
   }

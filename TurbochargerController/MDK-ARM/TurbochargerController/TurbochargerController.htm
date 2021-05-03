@@ -3,7 +3,7 @@
 <title>Static Call Graph - [TurbochargerController\TurbochargerController.axf]</title></head>
 <body><HR>
 <H1>Static Call Graph for image TurbochargerController\TurbochargerController.axf</H1><HR>
-<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5060960: Last Updated: Sun May 02 19:05:15 2021
+<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5060960: Last Updated: Sun May 02 21:11:49 2021
 <BR><P>
 <H3>Maximum Stack Usage =        224 bytes + Unknown(Cycles, Untraceable Function Pointers)</H3><H3>
 Call chain for Maximum Stack Depth:</H3>
@@ -325,7 +325,7 @@ Global Symbols
 
 <P><STRONG><a name="[74]"></a>__scatterload_rt2</STRONG> (Thumb, 0 bytes, Stack size 0 bytes, init.o(.text), UNUSED)
 
-<P><STRONG><a name="[4b]"></a>ADC_init</STRONG> (Thumb, 198 bytes, Stack size 8 bytes, main.o(i.ADC_init))
+<P><STRONG><a name="[4b]"></a>ADC_init</STRONG> (Thumb, 180 bytes, Stack size 8 bytes, main.o(i.ADC_init))
 <BR><BR>[Stack]<UL><LI>Max Depth = 24<LI>Call Chain = ADC_init &rArr; HAL_Delay
 </UL>
 <BR>[Calls]<UL><LI><a href="#[4c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_Delay
@@ -509,8 +509,8 @@ Global Symbols
 <P><STRONG><a name="[6]"></a>SVC_Handler</STRONG> (Thumb, 2 bytes, Stack size 0 bytes, stm32l4xx_it.o(i.SVC_Handler))
 <BR>[Address Reference Count : 1]<UL><LI> startup_stm32l412xx.o(RESET)
 </UL>
-<P><STRONG><a name="[9]"></a>SysTick_Handler</STRONG> (Thumb, 84 bytes, Stack size 8 bytes, stm32l4xx_it.o(i.SysTick_Handler))
-<BR><BR>[Stack]<UL><LI>Max Depth = 8<LI>Call Chain = SysTick_Handler
+<P><STRONG><a name="[9]"></a>SysTick_Handler</STRONG> (Thumb, 120 bytes, Stack size 16 bytes, stm32l4xx_it.o(i.SysTick_Handler))
+<BR><BR>[Stack]<UL><LI>Max Depth = 16<LI>Call Chain = SysTick_Handler
 </UL>
 <BR>[Calls]<UL><LI><a href="#[5f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_IncTick
 </UL>
@@ -534,7 +534,7 @@ Global Symbols
 <BR>[Address Reference Count : 1]<UL><LI> startup_stm32l412xx.o(.text)
 </UL>
 <P><STRONG><a name="[29]"></a>USART1_IRQHandler</STRONG> (Thumb, 134 bytes, Stack size 12 bytes, main.o(i.USART1_IRQHandler))
-<BR><BR>[Stack]<UL><LI>Max Depth = 12<LI>Call Chain = USART1_IRQHandler
+<BR><BR>[Stack]<UL><LI>Max Depth = 20<LI>Call Chain = USART1_IRQHandler &rArr; string_to_int
 </UL>
 <BR>[Calls]<UL><LI><a href="#[64]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;transmitChar
 <LI><a href="#[65]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;string_to_int
@@ -560,13 +560,14 @@ Global Symbols
 <BR>[Called By]<UL><LI><a href="#[42]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
 </UL>
 
-<P><STRONG><a name="[42]"></a>main</STRONG> (Thumb, 194 bytes, Stack size 8 bytes, main.o(i.main))
+<P><STRONG><a name="[42]"></a>main</STRONG> (Thumb, 208 bytes, Stack size 8 bytes, main.o(i.main))
 <BR><BR>[Stack]<UL><LI>Max Depth = 224<LI>Call Chain = main &rArr; SystemClock_Config &rArr; HAL_RCC_OscConfig &rArr; HAL_InitTick &rArr; HAL_NVIC_SetPriority
 </UL>
 <BR>[Calls]<UL><LI><a href="#[66]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_RCC_GetHCLKFreq
 <LI><a href="#[4e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_Init
 <LI><a href="#[4c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_Delay
 <LI><a href="#[68]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;transmitString
+<LI><a href="#[64]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;transmitChar
 <LI><a href="#[69]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;int_to_string
 <LI><a href="#[60]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SystemClock_Config
 <LI><a href="#[67]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;PWM_init
@@ -575,12 +576,15 @@ Global Symbols
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> entry9a.o(.ARM.Collect$$$$0000000B)
 </UL>
-<P><STRONG><a name="[65]"></a>string_to_int</STRONG> (Thumb, 28 bytes, Stack size 0 bytes, main.o(i.string_to_int))
-<BR><BR>[Called By]<UL><LI><a href="#[29]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;USART1_IRQHandler
+<P><STRONG><a name="[65]"></a>string_to_int</STRONG> (Thumb, 36 bytes, Stack size 8 bytes, main.o(i.string_to_int))
+<BR><BR>[Stack]<UL><LI>Max Depth = 8<LI>Call Chain = string_to_int
+</UL>
+<BR>[Called By]<UL><LI><a href="#[29]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;USART1_IRQHandler
 </UL>
 
 <P><STRONG><a name="[64]"></a>transmitChar</STRONG> (Thumb, 16 bytes, Stack size 0 bytes, main.o(i.transmitChar))
 <BR><BR>[Called By]<UL><LI><a href="#[68]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;transmitString
+<LI><a href="#[42]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
 <LI><a href="#[29]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;USART1_IRQHandler
 </UL>
 

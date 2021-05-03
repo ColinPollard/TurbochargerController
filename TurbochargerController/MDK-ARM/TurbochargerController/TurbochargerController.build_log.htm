@@ -27,18 +27,11 @@ Project File Date:  05/01/2021
 <h2>Output:</h2>
 *** Using Compiler 'V5.06 update 7 (build 960)', folder: 'D:\New Programs\Keil\ARM\ARMCC\Bin'
 Build target 'TurbochargerController'
-compiling main.c...
-../Core/Src/main.c(381): warning:  #167-D: argument of type "volatile char *" is incompatible with parameter of type "char *"
-  		transmitString(int_to_string(desiredStep));
-../Core/Src/main.c(500): warning:  #177-D: function "MX_USART2_UART_Init"  was declared but never referenced
-  static void MX_USART2_UART_Init(void)
-../Core/Src/main.c(451): warning:  #177-D: function "MX_ADC1_Init"  was declared but never referenced
-  static void MX_ADC1_Init(void)
-../Core/Src/main.c: 3 warnings, 0 errors
+compiling stm32l4xx_it.c...
 linking...
-Program Size: Code=4980 RO-data=492 RW-data=44 ZI-data=1028  
+Program Size: Code=5056 RO-data=492 RW-data=52 ZI-data=1028  
 FromELF: creating hex file...
-"TurbochargerController\TurbochargerController.axf" - 0 Error(s), 3 Warning(s).
+"TurbochargerController\TurbochargerController.axf" - 0 Error(s), 0 Warning(s).
 
 <h2>Software Packages used:</h2>
 
@@ -62,7 +55,7 @@ Package Vendor: Keil
 
    * Component: ARM::CMSIS:CORE:5.4.0
       Include file:  CMSIS\Core\Include\tz_context.h
-Build Time Elapsed:  00:00:03
+Build Time Elapsed:  00:00:05
 </pre>
 </body>
 </html>

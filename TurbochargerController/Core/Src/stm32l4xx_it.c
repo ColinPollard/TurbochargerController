@@ -33,6 +33,7 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 int counter = 0;
+int pressureCounter = 0;
 // extern int currentStep;
 // extern volatile uint8_t desiredStep;
 /* USER CODE END PD */
@@ -191,13 +192,13 @@ void SysTick_Handler(void)
 	// Handle motor movement.
 	if (counter > 10)
 	{
-		if (currentStep > desiredStep)
+		if (currentStep > 1 * (actualPressure - desiredPressure))
 		{
 			GPIOB->ODR |= (1 << 6);
 			GPIOB->ODR ^= (1 << 7);
 			currentStep--;
 		}
-		else if (currentStep < desiredStep)
+		else if (currentStep < 1 * (actualPressure - desiredPressure))
 		{
 			GPIOB->ODR &= ~(1 << 6);
 			GPIOB->ODR ^= (1 << 7);
@@ -205,6 +206,19 @@ void SysTick_Handler(void)
 		}
 		counter = 0;
 	}
+	
+	
+	pressureCounter++;
+	// Update the pressure reading
+	if (pressureCounter > 100)
+	{
+		pressureCounter = 0;
+		//Read ADC Data
+    uint16_t data = ADC1->DR;
+		ADC1->CR |= ADC_CR_ADSTART;
+    actualPressure = data;
+	}
+	
   /* USER CODE END SysTick_IRQn 0 */
   HAL_IncTick();
   /* USER CODE BEGIN SysTick_IRQn 1 */
