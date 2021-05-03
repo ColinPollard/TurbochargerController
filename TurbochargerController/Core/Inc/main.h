@@ -77,7 +77,8 @@ void Error_Handler(void);
 #define Step_Step_Pin GPIO_PIN_7
 #define Step_Step_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
-
+extern int currentStep;
+extern volatile uint8_t desiredStep;
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
