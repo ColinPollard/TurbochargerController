@@ -249,7 +249,7 @@ void USART1_IRQHandler(void)
 					desiredStep = temp;
 					
 				else if (readState == 2)
-					solenoidDuty = temp;
+					TIM2->CCR1 = temp;
 				
 				bufferIndex = 0;
 				readState = 0;
@@ -374,8 +374,8 @@ int main(void)
 		// Step the motor.
 		// 
 		// transmitString("Hello");
-		//check_ADC();
-		
+		// check_ADC();
+
 		GPIOB->ODR ^= (1 << 3);
 		transmitString("Current Motor Position: ");
 		transmitString(int_to_string(desiredStep));
