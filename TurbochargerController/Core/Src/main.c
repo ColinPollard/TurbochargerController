@@ -1,8 +1,13 @@
-/* USER CODE BEGIN Header */
 /**
   ******************************************************************************
-  * @file           : main.c
-  * @brief          : Main program body
+  * File           : main.c
+  * Project        : ECE 5780 -- MiniProject
+  * Authors        : Colin Pollard, McKay Mower, Luke Majors
+  * Date           : May 3, 2021
+  * Description    : Turbocharger controller main code to control STM32L412 microcontroller.
+  *                  Reads data from pressure sensor using ADC, transmits pressure and recieves
+  *                  commands from external controller using UART protocol, and controls stepper
+  *                  motor using this information.
   ******************************************************************************
   * @attention
   *
@@ -16,115 +21,110 @@
   *
   ******************************************************************************
   */
-/* USER CODE END Header */
+
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-ADC_HandleTypeDef hadc1;
 
-UART_HandleTypeDef huart2;
-
+/* Forward Declarations ------------------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_ADC1_Init(void);
+void ADC_init(void);
+void PWM_init(void);
+void transmitChar(char input);
 void transmitString(char* input);
+volatile char* int_to_string(uint16_t num);
 uint16_t string_to_int(volatile char* str);
 
-// *** Global Variables ***
-// Buffer to hold the ascii representation of the desired valve positions.
-volatile char numberBuffer[3];
-// Current state of receive interrupt.
-volatile int readState = 0;
-// Current index of buffer
-volatile int bufferIndex = 0;
-// Desired stepper motor position in steps.
-volatile uint16_t desiredPressure = 1;
-// Current stepper motor position in steps.
-int currentStep = 1;
-// Desired solenoid duty cycle from 0-333
-volatile int solenoidDuty = 0;
-// Current pressure
-volatile uint16_t actualPressure = 0;
+/* Global Variables --------------------------------------------------------*/
+volatile char numberBuffer[3];                        // Buffer to hold the ascii representation of the desired valve positions.
+volatile int readState = 0;                           // Current state of receive interrupt.
+volatile int bufferIndex = 0;                         // Current index of buffer
+volatile uint16_t desiredPressure = 1;                // Desired stepper motor position in steps.
+int currentStep = 1;                                  // Current stepper motor position in steps.
+volatile int solenoidDuty = 0;                        // Desired solenoid duty cycle from 0-333
+volatile uint16_t actualPressure = 0;                 // Current pressure
+volatile char bytes[] = {'0','0','0','0','\n','\0'};  // Byte array to help convert integers to ascii 
 
-volatile char bytes[] = {'0','0','0','0','\n','\0'};
-
-/*
- * Initializes ADC to PA7
+/**
+ * Initializes and calibrates ADC1 channel 12 to pin PA7
  */
 void ADC_init(void) {
-  //Use PA7 as ADC12_IN12
-  //Configure to Analog Mode (MODER bits 0 and 1 to 1)
+  // Configure PA7 to Analog Mode (MODER bits 14 and 15 to 1)
   GPIOA->MODER |= 0x3 << 14;
 
-  //Set no pull-up/pull-down resistors (PUPDR bits 0 and 1 to 0)
+  // Set PA7 to no pull-up/pull-down resistors (PUPDR bits 14 and 15 to 0)
   GPIOA->PUPDR &= ~(0x3 << 14);
 
-  //Enable ADC1 in RCC Peripheral
+  // Enable ADC1 in RCC Peripheral
   RCC->AHB2ENR |= RCC_AHB2ENR_ADCEN;
 
-  //Ensure DEEPPWD is set to 0
+  // Ensure DEEPPWD is set to 0
   if((ADC1 -> CR & ADC_CR_DEEPPWD))
     ADC1->CR &= ~ADC_CR_DEEPPWD;
 
-  //Set ADVREGEN to enable voltage regualtor start up
+  // Set ADVREGEN to enable voltage regualtor start up
   ADC1->CR |= ADC_CR_ADVREGEN;
   HAL_Delay(1); // Wait for voltage regulator
 
-  //Configure ADC1 to 12-bit resolution, continuous conversion, hardware triggers disabled
-  //ADC1->CFGR |= (1<<13);
+  // Configure ADC1 to 12-bit resolution, single conversion, hardware triggers disabled
   ADC1->CFGR &= ~((1<<3)|(1<<4)|(1<<5)|(1<<10)|(1<<11)|(1<<16)|(1<<14)|(1<<31)|(1<<25)|(1<<24)|(1<<23)|(1<<13));
 
-  //Enable Channel 12 in the ADC
-  //ADC1->CHSELR |= 1 << 12;
+  // Set Channel 12 to single-ended input conversion
   ADC1->DIFSEL &= ~(1 << 12);
 
-	//Set to single-ended input conversion
+	// Set ADC1 to perform single-ended input conversion
   ADC1->CR &= ~(1 << 30);
 	
-  //Calibrate the ADC
-  //*****Clear ADEN
-  if ((ADC1->CR & ADC_CR_ADEN) != 0) {
+  // Calibrate the ADC
+  //**** Clear ADEN
+  if ((ADC1->CR & ADC_CR_ADEN) != 0)
     ADC1->CR |= ADC_CR_ADDIS;
-  }
+
   while ((ADC1->CR & ADC_CR_ADEN) != 0){}
 
-  //*****Clear DMAEN
-  //ADC1->CFGR &= ~ADC_CFGR_DMAEN;
-
-  //*****Start Calibratiom
+  //**** Start Calibratiom
   ADC1->CR |= ADC_CR_ADCAL;
  
-  //*****Wait until calibration is complete
+  //**** Wait until calibration is complete
   while ((ADC1->CR & ADC_CR_ADCAL) != 0) {}
  
-  //Enable/start the ADC
-  //*****Clear ADRDY
+  // Enable/start the ADC
+  //**** Clear ADRDY
   if ((ADC1->ISR & ADC_ISR_ADRDY) != 0) {
     ADC1->ISR |= ADC_ISR_ADRDY;
   }
 
-  //*****Enable the ADC
+  //**** Enable the ADC
   ADC1->CR |= ADC_CR_ADEN;
 
-  //*****Wait until the ADC is ready
+  //**** Wait until the ADC is ready
   while (!(ADC1->ISR & ADC_ISR_ADRDY)) {}
 
-  //Select channel 12 and select one conversion
+  // Select channel 12 and select one conversion
   ADC1->SQR1 &= ~(0xF | (0x1F << 6));
   ADC1->SQR1 |= (12 << 6);
   
-  //*****Start the ADC
+  // Start the ADC
   ADC1->CR |= ADC_CR_ADSTART;
 }
 
-/*                                                                                                                                                                                                         
- * Converts integer to asci byte array                                                                                                                                                                     
+/**                                                                                                                                                                                                      
+ * Converts an integer to an ascii representation for UART transmission
+ * The converted character array include leading zeros for numbers below
+ * four digits, ends in a newline character and is null terminated.
+ * 
+ * @param    num -- the integer to convert
+ * @return   A character array representing the integer                                                                                                                                                      
  */
 volatile char* int_to_string(uint16_t num) {
+  // Reinitialize the byte array
   for(int i = 0; i < 4; i++) {
 		bytes[i] = '0';
 	}
 
+  // Convert each digit into an ascii character and add to the array
   int i = 0;
   while(num != 0) {
     int dig = num % 10;
@@ -135,12 +135,19 @@ volatile char* int_to_string(uint16_t num) {
   return bytes;
 }
 
-/*
- * Converts a 3-digit string representing an integer to an integer type
+/**
+ * Converts an array of character representing an integer 
+ * into and integer type.
+ * The input character array is assumed to represent a 3 digit number,
+ * or a smaller number that includes leading zeros.
+ * 
+ * @param   str -- A string or character array representing an integer
+ * @return  An integer value associated with the input character array
  */
 uint16_t string_to_int(volatile char* str) {
   char t;
   uint16_t num = 0;
+
   for(int i = 0; i < 3; i++) {
     t = str[i];
     uint16_t dig = t - 48;
@@ -150,7 +157,12 @@ uint16_t string_to_int(volatile char* str) {
   return num;
 }
 
-// Character transmitting function
+/**
+ * Transmits a character using the UART1 peripheral
+ * 
+ * @param   input -- the character to transmit
+ * @return  None
+ */
 void transmitChar(char input)
 {
 	// Check and wait for the USART transmit status flag. (Transmit data register empty TXE)
@@ -162,7 +174,12 @@ void transmitChar(char input)
 	USART1->TDR = input;
 }
 
-// Transmit an entire string
+/**
+ * Transmits a string using the UART1 peripheral
+ * 
+ * @param   input -- the string to transmit
+ * @return  None
+ */
 void transmitString(char* input)
 {
 	int index = 0;
@@ -172,12 +189,18 @@ void transmitString(char* input)
 	}
 }
 
-/*
- * Handles receiving from RS232. Sets desired positions.
+/**
+ * Interrupt handler for USART 1
+ * Parses received data from RS232 
+ * Sets desired motor positions and solenoid PWM duty cycle accordingly
+ * @param   input -- the string to transmit
+ * @return  None
  */
 void USART1_IRQHandler(void)
 {
 	char readCharacter = USART1->RDR;
+
+  // Echo the character back
 	transmitChar(readCharacter);
 	
 	// State 0 means there has been no prior transmission
@@ -250,7 +273,9 @@ void USART1_IRQHandler(void)
 	}
 }
 
-
+/**
+ * Initializes the PWM output on pin pA5 using the TIM2 peripheral
+ */
 void PWM_init(void){
 	__HAL_RCC_TIM2_CLK_ENABLE();
 	TIM2->PSC = 2999;
@@ -260,60 +285,30 @@ void PWM_init(void){
 	TIM2->CCMR1 &= ~(1 << 6 | 1 << 5 | 1 << 4);
 	TIM2->CCMR1 |= (1 << 6 | 1 << 5);
 	
-	//Enable ccer output
+	// Enable ccer output
 	TIM2->CCER |= 1 << 0;
 	
-	//50% duty cycle
+	// 50% duty cycle
 	TIM2->CCR1 = 0;
 	
-	//Set pa5 to alt function
+	// Set pa5 to alt function
 	GPIOA->MODER &= ~(1 << 11 | 1 << 10);
 	GPIOA->MODER |= 1 << 11;
 	
-	//pa5 alt function 1 = TIM2_CH1
+	// pa5 alt function 1 = TIM2_CH1
 	GPIOA->AFR[0] &= ~(GPIO_AFRL_AFSEL5);
 	GPIOA->AFR[0] |= 1 << 20; // choose alt function 0001
 	
 	
-	//Enable counter last
+	// Enable counter last
 	TIM2->CR1 |= (1 << 0);
 }
 
 /**
-  * @brief  The application entry point.
-  * @retval int
-  */
-int main(void)
-{
-  /* USER CODE BEGIN 1 */
-
-  /* USER CODE END 1 */
-
-  /* MCU Configuration--------------------------------------------------------*/
-
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
-
-  /* USER CODE BEGIN Init */
-
-  /* USER CODE END Init */
-
-  /* Configure the system clock */
-  SystemClock_Config();
-
-  /* USER CODE BEGIN SysInit */
-
-  /* USER CODE END SysInit */
-	
-  /* Initialize all configured peripherals */
-  MX_GPIO_Init();
-  // MX_USART2_UART_Init();
-  //MX_ADC1_Init();
-	
-  /* USER CODE BEGIN 2 */
-	
-	
-	// Don't Initialize the USART3 module TX is PA2, RX is PA3
+ * Initializes the USART1 peripheral
+ */
+void UART_Init(void) {
+  // Don't Initialize the USART3 module TX is PA2, RX is PA3
 	// Initialize the USART2 module TX is PA9, RX is PA10
 	// Set moder to alternate function 10. Clear bit, then set bit.
 	GPIOA->MODER &= ~((1 << 18) | (1 << 20));
@@ -324,10 +319,8 @@ int main(void)
 	GPIOA->AFR[1] |= ((7 << 4) | (7 << 8));
 	
 	// Route clock
-	// RCC->APB1ENR1 |= (1 << 17);
 	__HAL_RCC_USART1_CLK_ENABLE();
 
-	// RCC->APB1ENR1 |= RCC_APB1ENR1_USART2EN;
 	// Set baud rate 115200
 	USART1->BRR = (HAL_RCC_GetHCLKFreq() / 115200);
 	// Enable the transmitter and receiver
@@ -337,40 +330,49 @@ int main(void)
 	// Enable the peripheral
 	USART1->CR1 |= (1 << 0);
 	
-	// Configure the NVIC
+	// Configure the NVIC for USART1
 	// Enable the interrupt
 	NVIC_EnableIRQ(USART1_IRQn);
 	// Set the priority of the interrupt
 	NVIC_SetPriority(USART1_IRQn, 1);
+}
+
+/**
+  * @brief  The application entry point.
+  * @retval int
+  */
+int main(void)
+{
+  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+  HAL_Init();
+
+  /* Configure the system clock */
+  SystemClock_Config();
+
+  /* Initialize all configured peripherals */
+  MX_GPIO_Init();
+	ADC_init();
+	PWM_init();
+  UART_init();
 	
 	// Enable the stepper motor
 	GPIOB->ODR &= ~(1 << 0);
 	// Set the direction
   GPIOB->ODR |= (1 << 6);
-	// Initialize ADC
-	ADC_init();
-	
-	PWM_init();
-	/* USER CODE END 2 */
 
   /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
   while (1)
   {
-    /* USER CODE END WHILE */
-		// Step the motor.
-
+    //Transmit actual and desired pressure readings
 		transmitString("Current Pressure Reading: ");
 		volatile char* value = int_to_string(actualPressure);
-    //Transmit the value
     transmitString((char*)value);
 		transmitString("Desired Pressure Reading: ");
 		transmitString(int_to_string(desiredPressure));
 		transmitChar('\n');
+
 		HAL_Delay(1000);
-    /* USER CODE BEGIN 3 */
   }
-  /* USER CODE END 3 */
 }
 
 /**
@@ -431,90 +433,6 @@ void SystemClock_Config(void)
 }
 
 /**
-  * @brief ADC1 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_ADC1_Init(void)
-{
-
-  /* USER CODE BEGIN ADC1_Init 0 */
-
-  /* USER CODE END ADC1_Init 0 */
-
-  ADC_MultiModeTypeDef multimode = {0};
-
-  /* USER CODE BEGIN ADC1_Init 1 */
-
-  /* USER CODE END ADC1_Init 1 */
-  /** Common config
-  */
-  hadc1.Instance = ADC1;
-  hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV1;
-  hadc1.Init.Resolution = ADC_RESOLUTION_12B;
-  hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;
-  hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
-  hadc1.Init.LowPowerAutoWait = DISABLE;
-  hadc1.Init.ContinuousConvMode = ENABLE;
-  hadc1.Init.NbrOfConversion = 1;
-  hadc1.Init.DiscontinuousConvMode = DISABLE;
-  hadc1.Init.DMAContinuousRequests = DISABLE;
-  hadc1.Init.Overrun = ADC_OVR_DATA_PRESERVED;
-  hadc1.Init.OversamplingMode = DISABLE;
-  if (HAL_ADC_Init(&hadc1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /** Configure the ADC multi-mode
-  */
-  multimode.Mode = ADC_MODE_INDEPENDENT;
-  if (HAL_ADCEx_MultiModeConfigChannel(&hadc1, &multimode) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN ADC1_Init 2 */
-
-  /* USER CODE END ADC1_Init 2 */
-
-}
-
-/**
-  * @brief USART2 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_USART2_UART_Init(void)
-{
-
-  /* USER CODE BEGIN USART2_Init 0 */
-
-  /* USER CODE END USART2_Init 0 */
-
-  /* USER CODE BEGIN USART2_Init 1 */
-
-  /* USER CODE END USART2_Init 1 */
-  huart2.Instance = USART2;
-  huart2.Init.BaudRate = 115200;
-  huart2.Init.WordLength = UART_WORDLENGTH_8B;
-  huart2.Init.StopBits = UART_STOPBITS_1;
-  huart2.Init.Parity = UART_PARITY_NONE;
-  huart2.Init.Mode = UART_MODE_TX_RX;
-  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
-  huart2.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
-  huart2.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
-  if (HAL_UART_Init(&huart2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN USART2_Init 2 */
-
-  /* USER CODE END USART2_Init 2 */
-
-}
-
-/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -550,10 +468,6 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
 }
-
-/* USER CODE BEGIN 4 */
-
-/* USER CODE END 4 */
 
 /**
   * @brief  This function is executed in case of error occurrence.
