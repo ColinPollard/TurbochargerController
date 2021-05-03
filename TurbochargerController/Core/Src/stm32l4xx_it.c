@@ -33,6 +33,8 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 int counter = 0;
+// extern int currentStep;
+// extern volatile uint8_t desiredStep;
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -187,11 +189,20 @@ void SysTick_Handler(void)
 	// Create a system heartbeat through the led.
 	counter++;
 	// Handle motor movement.
-	if (counter > 100)
+	if (counter > 10)
 	{
-		// GPIOB->ODR ^= (1 << 3);
-		// Toggle motor direction
-		GPIOB->ODR ^= (1 << 6);
+		if (currentStep > desiredStep)
+		{
+			GPIOB->ODR |= (1 << 6);
+			GPIOB->ODR ^= (1 << 7);
+			currentStep--;
+		}
+		else if (currentStep < desiredStep)
+		{
+			GPIOB->ODR &= ~(1 << 6);
+			GPIOB->ODR ^= (1 << 7);
+			currentStep++;
+		}
 		counter = 0;
 	}
   /* USER CODE END SysTick_IRQn 0 */

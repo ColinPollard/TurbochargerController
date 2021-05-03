@@ -218,16 +218,12 @@ void USART1_IRQHandler(void)
 				// Check that number is in range
 				if (readCharacter >= '0' && readCharacter <= '9')
 				{
-					if(readCharacter == '0')
-						transmitChar('P');
-					// transmitString("Added number\r\n");
 					numberBuffer[bufferIndex] = readCharacter;
 					bufferIndex++;
 				}
 				// Invalid character received, error state.
 				else 
 				{
-					transmitString("Error 1\r\n");
 					readState = 0;
 					bufferIndex = 0;
 				}
@@ -235,7 +231,6 @@ void USART1_IRQHandler(void)
 			// Buffer is full, error state.
 			else
 			{
-				transmitString("Error 2\r\n");
 				readState = 0;
 				bufferIndex = 0;
 			}
@@ -262,7 +257,6 @@ void USART1_IRQHandler(void)
 			// Buffer not full, error state
 			else
 			{
-				transmitString("Error 3\r\n");
 				readState = 0;
 				bufferIndex = 0;
 			}
@@ -351,7 +345,7 @@ int main(void)
   {
     /* USER CODE END WHILE */
 		// Step the motor.
-		// GPIOB->ODR ^= (1 << 7);
+		// 
 		// transmitString("Hello");
 		//check_ADC();
 		
